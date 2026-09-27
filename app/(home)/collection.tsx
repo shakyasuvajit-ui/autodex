@@ -6,11 +6,6 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { firestore, auth } from '@/services/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_GAP = 12;
-const HORIZONTAL_PADDING = 20;
-const CARD_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
-
 type Vehicle = {
     id: string;
     type: 'Car' | 'Bike';
@@ -58,8 +53,8 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     card: {
-        width: CARD_WIDTH,
-        height: CARD_WIDTH * 1.2,
+        width: 150,
+        height: 200,
         borderRadius: 16,
         overflow: 'hidden',
         backgroundColor: '#111111',

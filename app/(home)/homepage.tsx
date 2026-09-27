@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     },
     recentCardName: {
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "400",
         color: "#FFFFFF",
         lineHeight: 18,
     },
