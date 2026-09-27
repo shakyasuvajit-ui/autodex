@@ -5,6 +5,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { firestore, auth } from '@/services/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
+import { onAuthStateChanged } from "firebase/auth";
 
 type Vehicle = {
     id: string;
@@ -28,8 +29,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         height: 48,
         marginBottom: 16,
-        width: 322,
-        alignSelf: "center",
+        marginHorizontal: 20,
     },
     searchInput: {
         flex: 1,
@@ -40,8 +40,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "500",
         color: "#0356C5",
-        alignSelf: "center",
-        width: 322,
+        marginHorizontal: 20,
         marginBottom: 16,
     },
     listContainer: {
@@ -71,19 +70,6 @@ const styles = StyleSheet.create({
         right: 0,
         paddingHorizontal: 10,
         paddingVertical: 10,
-    },
-    cardTypeBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginBottom: 4,
-    },
-    cardTypeText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: '#0356C5',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
     },
     cardName: {
         fontSize: 13,
@@ -120,22 +106,61 @@ export default function Collection() {
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
-        const user = auth.currentUser;
-        if (!user) return;
+  let unsubscribeVehicles: (() => void) | undefined;
 
-        const vehiclesRef = collection(firestore, 'users', user.uid, 'vehicles');
-        const q = query(vehiclesRef, orderBy('createdAt', 'desc'));
+  const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    // User is logged out
+    if (!user) {
+      setVehicles([]);
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data: Vehicle[] = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...(doc.data() as Omit<Vehicle, 'id'>),
-            }));
-            setVehicles(data);
-        });
+      if (unsubscribeVehicles) {
+        unsubscribeVehicles();
+        unsubscribeVehicles = undefined;
+      }
 
-        return () => unsubscribe();
-    }, []);
+      return;
+    }
+
+    // User is authenticated
+    const vehiclesRef = collection(
+      firestore,
+      "users",
+      user.uid,
+      "vehicles"
+    );
+
+    const q = query(
+      vehiclesRef,
+      orderBy("createdAt", "desc")
+    );
+
+    unsubscribeVehicles = onSnapshot(
+      q,
+      (snapshot) => {
+        const data: Vehicle[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Vehicle, "id">),
+        }));
+
+        setVehicles(data);
+      },
+      (error) => {
+        console.error(
+          "Collection Firestore listener error:",
+          error
+        );
+      }
+    );
+  });
+
+  return () => {
+    unsubscribeAuth();
+
+    if (unsubscribeVehicles) {
+      unsubscribeVehicles();
+    }
+  };
+}, []);
 
     const filteredVehicles = vehicles.filter((v) => {
         const q = searchQuery.toLowerCase();

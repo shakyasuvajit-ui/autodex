@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        paddingBottom:29
     },
     loginText:{
         color: "#FFFFFF",

@@ -1,46 +1,47 @@
 import { initializeFirebase } from "@/services/firebase";
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
+import { onAuthStateChanged, User } from "firebase/auth";
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+import "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 const { auth } = initializeFirebase();
 
 export const unstable_settings = {
-  anchor: '(home)',
+  anchor: "(home)",
 };
 
 export default function RootLayout() {
   const [isInitialized, setIsInitialized] = useState(false);
-
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (isInitialized) {
-      return;
-    }
-    setTimeout(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       setIsInitialized(true);
-    }, 2000);
+    });
+
+    return unsubscribe;
   }, []);
 
   if (!isInitialized) {
-    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#0000ff" />
-    </View>;
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000000", }}>
+        <ActivityIndicator size="large" color="#0356C5" />
+      </View>
+    );
   }
 
-  const isProtected = !!auth.currentUser;
   return (
-      <>
-      <Stack screenOptions={{ headerShown: false }} initialRouteName={isProtected ? '(home)' : 'index'}>
-        <Stack.Screen name="index"  />
-        <Stack.Screen name="login"  />
+    <>
+      <Stack screenOptions={{ headerShown: false }} initialRouteName={user ? "(home)" : "index"} >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
-        <Stack.Screen name="(home)"/>
+        <Stack.Screen name="(home)" />
       </Stack>
-      <Toast/>
-      </>
-      
+      <Toast />
+    </>
   );
 }

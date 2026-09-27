@@ -3,8 +3,7 @@ import React from 'react';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from 'react-native';
+
 import Octicons from '@expo/vector-icons/Octicons';
 import { auth } from '@/services/firebase';
 export default function TabLayout() {

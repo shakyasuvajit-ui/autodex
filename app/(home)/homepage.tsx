@@ -14,6 +14,7 @@ import { Image as ExpoImage} from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { auth, firestore } from "@/services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 type Vehicle = {
     id: string;
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
     statDivider: {
         width: 1,
         height: 36,
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#333333",
     },
     // Section header
     sectionHeader: {
@@ -145,12 +146,6 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         lineHeight: 18,
     },
-    recentCardSub: {
-        fontSize: 12,
-        fontWeight: "400",
-        color: "#CCCCCC",
-        marginTop: 2,
-    },
     // Empty state
     emptyText: {
         fontSize: 14,
@@ -185,25 +180,60 @@ export default function Homepage() {
     const [bikeCount, setBikeCount] = useState(0);
 
     useEffect(() => {
-        const user = auth.currentUser;
-        if (!user) return;
+  let unsubscribeVehicles: (() => void) | undefined;
 
-        const vehiclesRef = collection(firestore, "users", user.uid, "vehicles");
-        const q = query(vehiclesRef, orderBy("createdAt", "desc"));
+  const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    if (!user) { 
+        setVehicles([]);
+        setTotalCount(0);
+        setCarCount(0);
+        setBikeCount(0);
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data: Vehicle[] = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...(doc.data() as Omit<Vehicle, "id">),
-            }));
-            setVehicles(data);
-            setTotalCount(data.length);
-            setCarCount(data.filter((v) => v.type === "Car").length);
-            setBikeCount(data.filter((v) => v.type === "Bike").length);
-        });
+      if (unsubscribeVehicles) {
+        unsubscribeVehicles();
+        unsubscribeVehicles = undefined;
+      }
 
-        return () => unsubscribe();
-    }, []);
+      return;
+    }
+
+    const vehiclesRef = collection(firestore, "users", user.uid, "vehicles");
+    const q = query(vehiclesRef, orderBy("createdAt", "desc"));
+
+    unsubscribeVehicles = onSnapshot(
+      q,
+      (snapshot) => {
+        const data: Vehicle[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Vehicle, "id">),
+        }));
+
+        setVehicles(data);
+        setTotalCount(data.length);
+        setCarCount(
+          data.filter((vehicle) => vehicle.type === "Car").length
+        );
+        setBikeCount(
+          data.filter((vehicle) => vehicle.type === "Bike").length
+        );
+      },
+      (error) => {
+        console.error(
+          "Homepage Firestore listener error:",
+          error
+        );
+      }
+    );
+  });
+
+  return () => {
+    unsubscribeAuth();
+
+    if (unsubscribeVehicles) {
+      unsubscribeVehicles();
+    }
+  };
+}, []);
 
     const recentVehicles = vehicles.slice(0, 2);
 

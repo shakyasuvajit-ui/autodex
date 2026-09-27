@@ -122,6 +122,7 @@ export default function Profile() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <BackButton type="light" />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* header section */}
           <View style={styles.profileHeaderContainer}>
             <Image
@@ -132,8 +133,7 @@ export default function Profile() {
             <Text style={styles.profileName}>{auth.currentUser?.displayName ?? 'N/A'}</Text>
             <Text style={styles.profileEmail}>{auth.currentUser?.email ?? 'N/A'}</Text>
           </View>
-          <View style={{paddingHorizontal: 20}}>
-            {/* collection section */}
+          {/* collection section */}
           <View style={styles.collectionSection}>
             <Text style={styles.collectionTitle}>My Collection</Text>
             <LinearGradient
@@ -156,8 +156,7 @@ export default function Profile() {
               disabled={logoutProgress}
             />
           </View>
-          </View>
-          
+        </ScrollView>
       </SafeAreaView>
       <ProgressModel visible={logoutProgress} />
     </View>

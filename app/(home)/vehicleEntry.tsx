@@ -273,9 +273,9 @@ export default function VehicleEntry() {
                         </TouchableOpacity>
 
                         <View style={styles.dataEntry}> 
-                            <View style={{width:322, marginBottom:16}}>
+                            <View style={{marginBottom:16}}>
                                 <Text style={styles.dataEntryHeader}>Vehicle Information</Text>
-                                <Text style={{fontSize: 14, fontWeight: "500", color:'#ffffff', marginTop: 8}}>Vehicle Type</Text>
+                                <Text style={styles.inputLabel}>Vehicle Type</Text>
                             </View>
                             <View style={styles.typeSelect}>
                                 <TouchableOpacity 

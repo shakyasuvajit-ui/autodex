@@ -1,10 +1,14 @@
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
-import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
-import { Auth, createUserWithEmailAndPassword, getAuth, initializeAuth, signInWithEmailAndPassword, updateProfile, } from "firebase/auth";
-import { Firestore, initializeFirestore } from "firebase/firestore";
+import {FirebaseApp, getApp, getApps, initializeApp} from "firebase/app";
+import { Auth, createUserWithEmailAndPassword, getAuth, initializeAuth, signInWithEmailAndPassword, signOut as firebaseSignOut, updateProfile, } from "firebase/auth";
+import {Firestore, doc, initializeFirestore, serverTimestamp, setDoc,} from "firebase/firestore";
 
 const firebaseAuth = require("firebase/auth");
-const persistence = typeof firebaseAuth?.getReactNativePersistence === "function" ? firebaseAuth.getReactNativePersistence(ReactNativeAsyncStorage) : undefined;
+
+const persistence =
+  typeof firebaseAuth?.getReactNativePersistence === "function"
+    ? firebaseAuth.getReactNativePersistence(ReactNativeAsyncStorage)
+    : undefined;
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvMiPdG6LtPizH7qaEwVyy5gVL9sWc0yI",
@@ -19,26 +23,33 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let auth: Auth;
 let firestore: Firestore;
-// Initialize Firebase
+
 export function initializeFirebase() {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  app = getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp();
+
   try {
     auth = initializeAuth(app, { persistence });
   } catch (error) {
-    console.log("Error initializing auth", error);
+    console.log("Error initializing auth:", error);
     auth = getAuth(app);
   }
-  firestore=initializeFirestore(app,{});
-  return { app, auth, firestore };
+
+  firestore = initializeFirestore(app, {});
+
+  return { app, auth, firestore, };
 }
 
+export async function signUp( fullName: string, email: string, password: string ) {
+  const userCredential = await createUserWithEmailAndPassword( auth, email, password);
 
-export function signUp(fullName: string, email: string, password: string) {
-  return createUserWithEmailAndPassword(auth, email, password).then((userCredential) => {
-    return updateProfile(userCredential.user, { displayName: fullName }).then(() => {
-      return userCredential;
-    });
-  });
+  const user = userCredential.user;
+
+  await updateProfile(user, { displayName: fullName, });
+  await setDoc(doc(firestore, "users", user.uid), { uid: user.uid, fullName: fullName, email: email, createdAt: serverTimestamp(), });
+
+  return userCredential;
 }
 
 export function signIn(email: string, password: string) {
@@ -50,7 +61,7 @@ export function getCurrentUser() {
 }
 
 export function signOut() {
-  return signOut();
+  return firebaseSignOut(auth);
 }
 
-export { app, auth, firestore};
+export { app, auth, firestore };
