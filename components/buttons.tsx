@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         paddingHorizontal: 24,
         overflow: "hidden",
+        width: "100%",
     },
     text: {
         fontSize: 16,

@@ -2,14 +2,15 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { collection, getDocs } from "firebase/firestore";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/buttons";
 import ProgressModel from "@/components/progress-model";
-import { auth, signOut } from "@/services/firebase";
+import { auth, firestore } from "@/services/firebase";
 
 const styles = StyleSheet.create({
   container: {
@@ -82,6 +83,25 @@ export default function Profile() {
   const router = useRouter();
   const [logoutProgress, setLogoutProgress] = useState(false);
 
+  // --- Live collection counts ---
+  const [totalCount, setTotalCount] = useState(0);
+  const [carCount, setCarCount] = useState(0);
+  const [bikeCount, setBikeCount] = useState(0);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const vehiclesRef = collection(firestore, "users", user.uid, "vehicles");
+
+    getDocs(vehiclesRef).then((snapshot) => {
+      const vehicles = snapshot.docs.map((doc) => doc.data() as { type: "Car" | "Bike" });
+      setTotalCount(vehicles.length);
+      setCarCount(vehicles.filter((v) => v.type === "Car").length);
+      setBikeCount(vehicles.filter((v) => v.type === "Bike").length);
+    });
+  }, []);
+
   const handleLogout = async () => {
     try {
       setLogoutProgress(true);
@@ -122,9 +142,9 @@ export default function Profile() {
               end={{ x: 1, y: 0.5 }}
               style={styles.collectionCard}
             >
-              <Text style={styles.collectionItemText}>20 Vehicles</Text>
-              <Text style={styles.collectionItemText}>8 Cars</Text>
-              <Text style={styles.collectionItemText}>12 Bikes</Text>
+              <Text style={styles.collectionItemText}>{totalCount} {totalCount === 1 ? "Vehicle" : "Vehicles"}</Text>
+              <Text style={styles.collectionItemText}>{carCount} {carCount === 1 ? "Car" : "Cars"}</Text>
+              <Text style={styles.collectionItemText}>{bikeCount} {bikeCount === 1 ? "Bike" : "Bikes"}</Text>
             </LinearGradient>
           </View>
           <View style={styles.actionContainer}>
