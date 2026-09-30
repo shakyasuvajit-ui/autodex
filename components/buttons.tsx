@@ -26,13 +26,13 @@ type VariantConfig = {
 const variantConfig: Record<Props["type"] & string, VariantConfig> = {
     primary: {
         gradient: ["#0356C5", "#002759"],
-        boxShadow: "0px 8px 20px rgba(58, 87, 125, 0.55)",
+        boxShadow: "0px 8px 20px rgba(15, 35, 62, 0.55)",
         borderColor: "#000000",
         textColor: "#FFFFFF",
     },
     secondary: {
         gradient: ["#7FB0E0", "#3D6FA8"],
-        boxShadow: "0px 8px 20px rgba(45, 82, 125, 0.57)",
+        boxShadow: "0px 8px 20px rgba(15, 35, 62, 0.55)",
         borderColor: "#000000",
         textColor: "#FFFFFF",
     },
