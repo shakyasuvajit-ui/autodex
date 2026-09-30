@@ -112,8 +112,8 @@ export default function Profile() {
         text1: "Failed to logout",
       });
     } finally {
-      router.push("/login");
       setLogoutProgress(false);
+      router.replace("/");
     }
   }
 

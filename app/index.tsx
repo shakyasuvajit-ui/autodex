@@ -49,7 +49,7 @@ export default function Index() {
         <View style={styles.container}>
             <View style={styles.logoContainer}>
                 <Image
-                    source={require("@/assets/png/APPLOGO.png")}
+                    source={require("@/assets/png/app-logo.png")}
                     style={styles.logo}/>
             </View>
             <SafeAreaView>
