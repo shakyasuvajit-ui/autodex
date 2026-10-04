@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Image,
-    Dimensions,
-    ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Image as ExpoImage} from "expo-image";
@@ -21,13 +13,9 @@ type Vehicle = {
     type: "Car" | "Bike";
     brand: string;
     name: string;
-    year?: string;
-    subtype?: string;
     photoUri: string;
     createdAt: any;
 };
-
-// ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -39,7 +27,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 32,
     },
-    // Header
     header: {
         flexDirection: "row",
         alignItems: "center",
@@ -62,7 +49,6 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255, 255, 255, 0.2)",
         backgroundColor: "#111111",
     },
-    // Stats card
     statsCard: {
         marginHorizontal: 20,
         marginTop: 24,
@@ -94,7 +80,6 @@ const styles = StyleSheet.create({
         height: 36,
         backgroundColor: "#333333",
     },
-    // Section header
     sectionHeader: {
         flexDirection: "row",
         alignItems: "center",
@@ -114,7 +99,6 @@ const styles = StyleSheet.create({
         color: "#0356C5",
         letterSpacing: 0.5,
     },
-    // Recent vehicle cards row
     recentList: {
         paddingHorizontal: 20,
         gap: 12,
@@ -146,7 +130,6 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         lineHeight: 18,
     },
-    // Empty state
     emptyText: {
         fontSize: 14,
         color: "#666666",
@@ -155,10 +138,8 @@ const styles = StyleSheet.create({
     },
 });
 
-// ─── RecentVehicleCard Component ───────────────────────────────────────────────
 function RecentVehicleCard({ vehicle }: { vehicle: Vehicle }) {
-    const displaySub = vehicle.subtype || vehicle.type;
-
+    // const displaySub = vehicle.subtype || vehicle.type;
     return (
         <View style={styles.recentCard}>
             <Image source={{ uri: vehicle.photoUri }} style={styles.recentCardImage} />
@@ -171,7 +152,6 @@ function RecentVehicleCard({ vehicle }: { vehicle: Vehicle }) {
     );
 }
 
-// ─── Homepage ──────────────────────────────────────────────────────────────────
 export default function Homepage() {
     const router = useRouter();
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -218,10 +198,7 @@ export default function Homepage() {
         );
       },
       (error) => {
-        console.error(
-          "Homepage Firestore listener error:",
-          error
-        );
+        console.error("Firestore listener error:",error);
       }
     );
   });
@@ -259,7 +236,6 @@ export default function Homepage() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* ── Stats Card ── */}
                     <View style={styles.statsCard}>
                         <View style={styles.statItem}>
                             <Text style={styles.statNumber}>{totalCount}</Text>
@@ -277,7 +253,6 @@ export default function Homepage() {
                         </View>
                     </View>
 
-                    {/* ── Recently Added ── */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recently added</Text>
                         <TouchableOpacity

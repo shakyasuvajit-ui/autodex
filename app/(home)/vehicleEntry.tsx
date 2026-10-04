@@ -163,29 +163,24 @@ export default function VehicleEntry() {
             Alert.alert("Permission needed", "Camera permission is required to capture vehicle photos.");
             return;
         }
-
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: ['images'],
             quality: 0.8,
         });
-
         if (!result.canceled && result.assets && result.assets.length > 0) {
             setPhotoUri(result.assets[0].uri);
         }
     };
-
     const handleGalleryPick = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
             Alert.alert("Permission needed", "Gallery permission is required to select photos.");
             return;
         }
-
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             quality: 0.8,
         });
-
         if (!result.canceled && result.assets && result.assets.length > 0) {
             setPhotoUri(result.assets[0].uri);
         }

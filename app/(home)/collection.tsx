@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TextInput, FlatList, Image, Dimensions, TouchableOpacity, } from "react-native";
+import { Alert, View, Text, StyleSheet, TextInput, FlatList, Image, Dimensions, TouchableOpacity, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, deleteDoc, doc } from 'firebase/firestore';
 import { firestore, auth } from '@/services/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
 import { onAuthStateChanged } from "firebase/auth";
@@ -18,98 +18,146 @@ type Vehicle = {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: "#000000",
+      flex: 1,
+      backgroundColor: "#000000",
     },
     searchBar: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#22252A",
-        borderRadius: 24,
-        paddingHorizontal: 16,
-        height: 48,
-        marginBottom: 16,
-        marginHorizontal: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#22252A",
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      height: 48,
+      marginBottom: 16,
+      marginHorizontal: 20,
     },
     searchInput: {
-        flex: 1,
-        color: "#FFFFFF",
-        fontSize: 16,
+      flex: 1,
+      color: "#FFFFFF",
+      fontSize: 16,
     },
     totalText: {
-        fontSize: 16,
-        fontWeight: "500",
-        color: "#0356C5",
-        marginHorizontal: 20,
-        marginBottom: 16,
+      fontSize: 16,
+      fontWeight: "500",
+      color: "#0356C5",
+      marginHorizontal: 20,
+      marginBottom: 16,
     },
     listContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 24,
+      paddingHorizontal: 20,
+      paddingBottom: 24,
     },
     columnWrapper: {
-        gap: 12,
-        marginBottom: 12,
+      gap: 12,
+      marginBottom: 12,
     },
     card: {
-        width: 150,
-        height: 200,
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#111111',
+      width: 150,
+      height: 200,
+      borderRadius: 16,
+      overflow: 'hidden',
+      backgroundColor: '#111111',
     },
     cardImage: {
-        width: '100%',
-        height: '100%',
-        resizeMode: 'cover',
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
     },
     cardOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 10,
+      paddingVertical: 10,
     },
     cardName: {
-        fontSize: 13,
-        fontWeight: '400',
-        color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '400',
+      color: '#FFFFFF',
     },
     emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingBottom: 80,
-        gap: 16,
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingBottom: 80,
+      gap: 16,
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+    deleteButton: {
+      position: "absolute",
+      top: 10,
+      right: 10,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: "#D32F2F",
+      justifyContent: "center",
+      alignItems: "center",
     },
 });
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+function VehicleCard({ vehicle, onDelete }: { vehicle: Vehicle, onDelete: (vehicleId:string) => void }) {
     return (
         <View style={styles.card}>
             <Image source={{ uri: vehicle.photoUri }} style={styles.cardImage} />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.cardOverlay} >
                 <Text style={styles.cardName} numberOfLines={1}>{vehicle.brand} {vehicle.name} </Text>
             </LinearGradient>
+            <TouchableOpacity style={styles.deleteButton} onPress={() => onDelete(vehicle.id)} >
+                <FontAwesome5 name="trash" size={13} color="#FFFFFF"/>
+            </TouchableOpacity>
         </View>
     );
 }
 
 export default function Collection() {
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const handleDelete = (vehicleId: string) => {
+  Alert.alert(
+    "Delete Vehicle",
+    "Are you sure you want to delete this vehicle?",
+    [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const user = auth.currentUser;
 
+            if (!user) {
+              Alert.alert("Error", "You must be logged in.");
+              return;
+            }
+
+            const vehicleRef = doc(firestore,"users",user.uid,"vehicles",vehicleId);
+
+            await deleteDoc(vehicleRef);
+          } catch (error) {
+            console.error("Error deleting vehicle:", error);
+            Alert.alert(
+              "Error",
+              "Could not delete the vehicle. Please try again."
+            );
+          }
+        },
+      },
+    ]
+  );
+};
     useEffect(() => {
   let unsubscribeVehicles: (() => void) | undefined;
 
   const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-    // User is logged out
     if (!user) {
       setVehicles([]);
 
@@ -121,18 +169,8 @@ export default function Collection() {
       return;
     }
 
-    // User is authenticated
-    const vehiclesRef = collection(
-      firestore,
-      "users",
-      user.uid,
-      "vehicles"
-    );
-
-    const q = query(
-      vehiclesRef,
-      orderBy("createdAt", "desc")
-    );
+    const vehiclesRef = collection(firestore,"users",user.uid,"vehicles");
+    const q = query(vehiclesRef,orderBy("createdAt", "desc"));
 
     unsubscribeVehicles = onSnapshot(
       q,
@@ -145,14 +183,11 @@ export default function Collection() {
         setVehicles(data);
       },
       (error) => {
-        console.error(
-          "Collection Firestore listener error:",
-          error
-        );
+        console.error("Firestore listener error:",error);
       }
     );
   });
-
+  
   return () => {
     unsubscribeAuth();
 
@@ -198,9 +233,10 @@ export default function Collection() {
                     numColumns={2}
                     contentContainerStyle={styles.listContainer}
                     columnWrapperStyle={styles.columnWrapper}
-                    renderItem={({ item }) => <VehicleCard vehicle={item} />}
+                    renderItem={({ item }) => <VehicleCard vehicle={item} onDelete={handleDelete} />}
                     showsVerticalScrollIndicator={false}
                 />
+                
             )}
         </SafeAreaView>
     );

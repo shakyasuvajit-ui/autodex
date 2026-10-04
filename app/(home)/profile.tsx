@@ -1,16 +1,15 @@
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { BackButton } from "@/components/back-button";
 import { Button } from "@/components/buttons";
 import ProgressModel from "@/components/progress-model";
 import { auth, firestore } from "@/services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 const styles = StyleSheet.create({
   container: {
@@ -51,7 +50,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   collectionSection: {
-    marginTop: 28,
+    marginHorizontal: 10,
+    marginTop: 24,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#0356C5",
+    paddingVertical: 22,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
   },
   collectionTitle: {
     fontSize: 18,
@@ -69,10 +77,23 @@ const styles = StyleSheet.create({
     gap: 12,
     overflow: "hidden",
   },
+  collectionItem:{
+    alignItems: "center",
+  },
+  collecDivider:{
+    width: 1,
+    height: 36,
+    backgroundColor: "#333333",
+  },
   collectionItemText: {
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  collectionNum:{
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0356C5",
   },
   actionContainer: {
     marginTop: 36,
@@ -83,24 +104,59 @@ export default function Profile() {
   const router = useRouter();
   const [logoutProgress, setLogoutProgress] = useState(false);
 
-  // --- Live collection counts ---
   const [totalCount, setTotalCount] = useState(0);
   const [carCount, setCarCount] = useState(0);
   const [bikeCount, setBikeCount] = useState(0);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
+  let unsubscribeVehicles: (() => void) | undefined;
 
-    const vehiclesRef = collection(firestore, "users", user.uid, "vehicles");
+  const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      setTotalCount(0);
+      setCarCount(0);
+      setBikeCount(0);
 
-    getDocs(vehiclesRef).then((snapshot) => {
-      const vehicles = snapshot.docs.map((doc) => doc.data() as { type: "Car" | "Bike" });
-      setTotalCount(vehicles.length);
-      setCarCount(vehicles.filter((v) => v.type === "Car").length);
-      setBikeCount(vehicles.filter((v) => v.type === "Bike").length);
-    });
-  }, []);
+      if (unsubscribeVehicles) {
+        unsubscribeVehicles();
+        unsubscribeVehicles = undefined;
+      }
+
+      return;
+    }
+
+    const vehiclesRef = collection(
+      firestore,
+      "users",
+      user.uid,
+      "vehicles"
+    );
+
+    unsubscribeVehicles = onSnapshot(
+      vehiclesRef,
+      (snapshot) => {
+        const vehicles = snapshot.docs.map((doc)=>doc.data() as { type: "Car" | "Bike" });
+
+        setTotalCount(vehicles.length);
+
+        setCarCount(vehicles.filter((v) => v.type === "Car").length);
+
+        setBikeCount(vehicles.filter((v) => v.type === "Bike").length);
+      },
+      (error) => {
+        console.error("Firestore listener error:",error);
+      }
+    );
+  });
+
+  return () => {
+    unsubscribeAuth();
+
+    if (unsubscribeVehicles) {
+      unsubscribeVehicles();
+    }
+  };
+}, []);
 
   const handleLogout = async () => {
     try {
@@ -135,26 +191,23 @@ export default function Profile() {
           </View>
           {/* collection section */}
           <View style={styles.collectionSection}>
-            <Text style={styles.collectionTitle}>My Collection</Text>
-            <LinearGradient
-              colors={["#0052CC", "#003380", "#001A40", "#000A1A"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.collectionCard}
-            >
-              <Text style={styles.collectionItemText}>{totalCount} {totalCount === 1 ? "Vehicle" : "Vehicles"}</Text>
-              <Text style={styles.collectionItemText}>{carCount} {carCount === 1 ? "Car" : "Cars"}</Text>
-              <Text style={styles.collectionItemText}>{bikeCount} {bikeCount === 1 ? "Bike" : "Bikes"}</Text>
-            </LinearGradient>
+            <View style={styles.collectionItem}>
+                <Text style={styles.collectionNum}>{totalCount}</Text>
+                <Text style={styles.collectionItemText}>Vehicles</Text>
+            </View>
+            <View style={styles.collecDivider} />
+            <View style={styles.collectionItem}>
+                <Text style={styles.collectionNum}>{bikeCount}</Text>
+                <Text style={styles.collectionItemText}>Bikes</Text>
+            </View>
+            <View style={styles.collecDivider} />
+            <View style={styles.collectionItem}>
+                <Text style={styles.collectionNum}>{carCount}</Text>
+                <Text style={styles.collectionItemText}>Cars</Text>
+            </View>
           </View>
           <View style={styles.actionContainer}>
-            <Button
-              title="Log Out"
-              type="outline"
-              onPress={handleLogout}
-              loading={logoutProgress}
-              disabled={logoutProgress}
-            />
+            <Button title="Log Out" type="outline" onPress={handleLogout} loading={logoutProgress} disabled={logoutProgress} />
           </View>
         </ScrollView>
       </SafeAreaView>

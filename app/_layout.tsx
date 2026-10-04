@@ -32,7 +32,6 @@ export default function RootLayout() {
       </View>
     );
   }
-
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} initialRouteName={user ? "(home)" : "index"} >
